@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+    <script>
+
+
+const API_URL = 'https://www.lego.com/api/graphql/StoresDirectory';
+
+const GRAPHQL_QUERY = `
+query StoresDirectoryQuery {
+  storesDirectory {
+    id
+    country
+    region
+    stores {
+      storeId
+      name
+      phone
+      state
+      openingDate
+      certified
+      additionalInfo
+      storeUrl
+      urlKey
+      isNewStore
+      isComingSoon
+      __typename
+    }
+    __typename
+  }
+}
+`;
+
+// The operation name is required by the server (as determined by the PHP error)
+const OPERATION_NAME = 'StoresDirectoryQuery'; 
+
+const requestBody = {
+    query: GRAPHQL_QUERY
+};
+
+const headers = {
+    // Required by GraphQL standard
+    'Content-Type': 'application/json', 
+    // Recommended to bypass security/CSRF checks (matches the PHP fix)
+    'x-apollo-operation-name': OPERATION_NAME,
+    // Spoofing a User-Agent is less effective in a browser but good practice
+    // Browsers automatically handle cookies and other security checks
+};
+
+fetch(API_URL, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify(requestBody) // Send the body as a JSON string
+})
+.then(response => {
+    // Check if the HTTP status code indicates success (200-299)
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    // Parse the JSON response body
+    return response.json();
+})
+.then(data => {
+    // --- Data Processing ---
+    console.log('✅ Stores Data Received:');
+    
+    // Check for GraphQL errors (part of the JSON payload)
+    if (data.errors) {
+        console.error('⚠️ GraphQL Errors:', data.errors);
+        return;
+    }
+    
+    // Access the list of stores
+    const storesData = data.data.storesDirectory
+    console.log(`Found ${storesData.length} stores.`);
+    
+    // Example of iterating over the list:
+    storesData.forEach(stores => {
+
+        console.log(`- ${stores.country} - ${stores.region}`);
+
+        stores.stores.forEach(store => {
+            console.log(`-- ${store.name} (${store.storeId})`);
+        });
+    });
+
+})
+.catch(error => {
+    // Handles network errors, CORS blocks, or the HTTP status error thrown above
+    console.error('❌ Fetch failed or was blocked:', error);
+});
+
+
+    </script>
+</body>
+</html>
